@@ -162,6 +162,27 @@ O ZIP contém JavaScript compilado, Angular compilado, migrações, dependência
 - [PubMed 6975564](https://pubmed.ncbi.nlm.nih.gov/6975564/) · DOI: 10.1093/ajcn/34.11.2540
 - [OpenAPI completo](docs/openapi.json) — também em `/api/v1/openapi.json`
 
+
+
+
 ## Aviso legal
 
 Este sistema é uma ferramenta de apoio ao registro e cálculo. **Não gera diagnóstico, prescrição nem substituição de avaliação clínica.** A interpretação dos resultados é de responsabilidade exclusiva do profissional de saúde habilitado. Nenhuma tabela numérica de terceiros foi reproduzida ou licenciada neste repositório.
+
+
+
+
+## Autor <a name="authors"></a>
+
+- Mateus de Lima Lins Prestes
+- Desenvolvedor Back-end / Full Stack
+- GitHub: https://github.com/TeuzLins
+- LinkedIn: https://www.linkedin.com/in/mateus-de-lima-lins-prestes-304a812b7/
+
+<td align="center"><a href="https://github.com/TeuzLins"><img style="border-radius: 50%;" src="https://github.com/TeuzLins.png" width="100px;" alt=""/><br /><sub><b>Teuz Lins</b></sub></a><br /><sub>Back-end Developer</sub></td>
+
+  ## License
+Este projeto está sob a MIT License.  
+Consulte o arquivo [LICENSE](./LICENSE) para mais detalhes.
+
+![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)
