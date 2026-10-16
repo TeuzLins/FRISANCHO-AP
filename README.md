@@ -1,89 +1,159 @@
-# FRISANCHO AP
+README — FRISANCHO AP
+Cabeçalho
+<img width="2172" height="724" alt="Frisancho AP minimalist healthcare banner" src="https://github.com/user-attachments/assets/cfa928b7-74de-4c8d-b612-1bc98a2e20bf" />
 
-Aplicação em português brasileiro para calcular a Circunferência Muscular do Braço (CMB), salvar avaliações e acompanhar pacientes. **Angular + Prisma + PostgreSQL**, conforme solicitado. O cálculo rápido funciona sem conta e sem salvar dados automaticamente.
+<div align="center">
 
-## Arquitetura
+[![Angular](https://img.shields.io/badge/Angular-21-DD0031?style=flat-square&logo=angular&logoColor=white)](https://angular.dev)
+[![Node.js](https://img.shields.io/badge/Node.js-24-339933?style=flat-square&logo=nodedotjs&logoColor=white)](https://nodejs.org)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://typescriptlang.org)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-336791?style=flat-square&logo=postgresql&logoColor=white)](https://postgresql.org)
+[![Prisma](https://img.shields.io/badge/Prisma-6-2D3748?style=flat-square&logo=prisma&logoColor=white)](https://prisma.io)
+[![License](https://img.shields.io/badge/licença-privada-lightgrey?style=flat-square)](./LICENSE)
 
-- `apps/web`: Angular 21, componentes standalone, rotas carregadas sob demanda, Reactive Forms, Zod, Tailwind CSS 4 e Lucide. Substitui React/Vite/React Hook Form do documento original por solicitação do usuário.
-- `apps/api`: Node.js 24, Express 5, Prisma 6, PostgreSQL, Argon2id e sessões revogáveis em cookie.
-- `packages/anthropometry`: funções puras de cálculo, normalização, idade e metadados compartilhados.
-- Em produção o Express serve o Angular e a API no mesmo domínio. Rotas desconhecidas de `/api` retornam JSON; as rotas da aplicação permitem atualização da página.
-- PDF A4 gerado no servidor com PDFKit, Inter incorporada (licença SIL Open Font License) e sem dependência de Chromium. A mesma fonte é servida localmente no frontend. Há também impressão HTML no navegador.
+![FRISANCHO AP](docs/banner.png)
 
-Angular 21 foi escolhido por compatibilidade com TypeScript 5.9, Node.js 24 e Lucide Angular 1.0. Prisma 6 mantém o cliente e as migrações neste projeto. O lockfile registra as versões efetivamente instaladas. Overrides de `effect` e `deepmerge-ts` corrigem avisos transitivos da CLI Prisma; geração e migrações foram verificadas com eles.
+**Avaliação antropométrica · Cálculo da CMB · Histórico de pacientes**
 
-## Executar localmente — Windows
+[Demonstração ao vivo](#) · [Documentação da API](docs/openapi.json) · [Guia de publicação](docs/DEPLOY.md)
 
-Requisitos: Node.js 24 e npm. No PowerShell use `npm.cmd` e `npx.cmd` se a execução de scripts `.ps1` estiver bloqueada. Não é necessário alterar a política do Windows.
+</div>
 
-```powershell
+---
+
+![Interface — Nova Avaliação](docs/screenshot.png)
+Sobre o projeto
+FRISANCHO AP é uma aplicação web em português brasileiro para cálculo da Circunferência Muscular do Braço (CMB), cadastro de pacientes e acompanhamento longitudinal de avaliações antropométricas.
+O cálculo rápido está disponível sem conta e sem persistência de dados. O cadastro desbloqueia histórico, emissão de PDF A4 e exportação. O sistema não gera diagnóstico nem prescrição; a interpretação clínica é de responsabilidade do profissional.
+Referência: Frisancho AR, 1981 — resumo do periódico · PubMed · DOI: 10.1093/ajcn/34.11.2540. Sem tabela numérica validada/licenciada; percentil e classificação permanecem null.
+Funcionalidades
+• Cálculo instantâneo de CMB (CB − π × DCT_mm / 10) sem arredondamentos intermediários; rejeita combinações com CMB ≤ 0
+• Cálculo sem conta — rápido, sem armazenamento automático
+• Cadastro de pacientes com nascimento, derivação automática de idade na data da avaliação
+• Histórico com filtro, consulta, edição com recálculo, exclusão com confirmação e emissão de PDF A4
+• PDF no servidor gerado com PDFKit e fonte Inter incorporada (SIL OFL); impressão HTML disponível no navegador
+• Interpretação contextual — exibe motivos separados para idade fora da cobertura, sexo ausente e tabela indisponível
+• Exportação de dados e exclusão de conta com senha e confirmação
+• Aceita vírgula e ponto como separador decimal
+Stack tecnológica
+Camada
+Tecnologia
+Versão
+Frontend
+Angular — standalone, rotas lazy, Reactive Forms
+21
+Estilização
+Tailwind CSS
+4
+Ícones
+Lucide Angular
+1.0
+Validação
+Zod
+—
+Backend
+Node.js + Express
+24 / 5
+ORM
+Prisma
+6
+Banco de dados
+PostgreSQL
+—
+Autenticação
+Argon2id + sessões em cookie revogáveis
+—
+PDF
+PDFKit + Inter (SIL OFL)
+—
+Dev DB local
+embedded-postgres (127.0.0.1:54329)
+—
+Linguagem
+TypeScript
+5.9
+Cálculo compartilhado
+@frisancho/anthropometry (pacote puro)
+—
+Arquitetura
+frisancho-ap/
+├── apps/
+│   ├── web/          # Angular 21 — frontend compilado
+│   └── api/          # Express 5 — API REST + servidor de arquivos estáticos
+├── packages/
+│   └── anthropometry/ # Funções puras: cálculo, normalização, idade, metadados
+└── docs/             # OpenAPI, guias de deploy e operação
+Em produção, o Express serve o Angular e a API no mesmo domínio (/api/v1/* → handlers; demais rotas → index.html). Rotas desconhecidas de /api retornam JSON. O pacote @frisancho/anthropometry é compartilhado e requer recompilação manual ao alterar.
+Início rápido — Windows
+Requisitos: Node.js 24 e npm. Use npm.cmd e npx.cmd no PowerShell se scripts .ps1 estiverem bloqueados.
+# 1. Instalar dependências
 npm.cmd ci
+
+# 2. Configurar ambiente local e gerar o cliente Prisma
 npm.cmd run local:setup
 npm.cmd run db:generate
+
+# 3. Compilar
 npm.cmd run build
-```
 
-Em um terminal separado, inicie o PostgreSQL de desenvolvimento:
-
-```powershell
+# 4. Em um terminal separado — iniciar o PostgreSQL local
 npm.cmd run local:db
-```
+# Escuta em 127.0.0.1:54329 · persiste em .local/postgres · senha em .env (ignorado pelo Git)
 
-O script usa PostgreSQL real, disponível pelo pacote `embedded-postgres`, escuta apenas em `127.0.0.1:54329` e persiste em `.local/postgres`. É uma facilidade de desenvolvimento; a publicação usa um serviço PostgreSQL persistente externo. A senha local é aleatória, fica em `.env` ignorado pelo Git e não é exibida.
-
-Depois:
-
-```powershell
+# 5. Aplicar migrações e iniciar
 npm.cmd run db:migrate
 node --env-file=.env apps/api/dist/server.js
-```
+Acesse http://localhost:3000 (use exatamente este endereço para cadastro e login). GET /api/v1/health confirma a conexão com o banco.
+Para usar PostgreSQL próprio ou Docker, copie .env.example → .env, ajuste DATABASE_URL e aplique as migrações.
+Desenvolvimento com atualização automática
+Com o banco em execução, altere .env para APP_ORIGIN=http://localhost:4200 e rode:
+# Recompilar o pacote compartilhado sempre que alterá-lo
+npm.cmd run build -w @frisancho/anthropometry
 
-Abra **http://localhost:3000**. `GET /api/v1/health` informa a conexão com o banco. A configuração local usa `APP_ORIGIN=http://localhost:3000`; use exatamente esse endereço para cadastro e login.
-
-Também é possível usar PostgreSQL próprio ou Docker: copie `.env.example` para `.env`, ajuste `DATABASE_URL` e aplique as migrações. No Docker, use armazenamento persistente e configure credenciais em ambiente, sem incluí-las na imagem.
-
-## Desenvolvimento com atualização automática
-
-Com o banco iniciado, altere `.env` para `APP_ORIGIN=http://localhost:4200`, rode `npm.cmd run build -w @frisancho/anthropometry` e `npm.cmd run dev`. Acesse http://localhost:4200; o dev server Angular encaminha `/api` ao Express na porta 3000. Alterações no pacote compartilhado exigem recompilar esse pacote.
-
-## Uso
-
-1. Preencha idade, CB em cm e DCT em mm; vírgula e ponto decimal são aceitos. Campos começam vazios.
-2. Clique em **Calcular avaliação**. O resultado anterior é invalidado quando qualquer entrada da avaliação muda.
-3. **Carregar exemplo** insere um caso fictício de 76 anos, CB 30 cm, DCT 16 mm e CMB anterior 25 cm. O exemplo nunca é salvo automaticamente.
-4. Crie uma conta, cadastre um paciente e selecione-o antes de salvar. Com nascimento, a idade é derivada na data da avaliação.
-5. No histórico, filtre, consulte, emita PDF, imprima, edite com recálculo ou exclua com confirmação.
-6. Configurações permite exportar dados e excluir conta com senha e confirmação.
-
-## Cálculo e referência
-
-`CMB = CB − Math.PI × (DCT_mm / 10)`. CB 30 e DCT 16 produzem `24.97345175425633 cm`, exibidos como **24,97 cm**. Nenhum resultado intermediário é arredondado. Combinações com CMB não positiva são rejeitadas. Peso e altura não são estimados; quando medidos, ambos permitem somente IMC numérico.
-
-Frisancho 1981 abrange 1 a 74 anos, com categorias por idade e sexo. Há apenas metadados bibliográficos, **sem tabela numérica validada/licenciada**. Percentil e classificação permanecem `null`. Aos 76 anos, os motivos de idade fora da cobertura, sexo ausente e tabela indisponível são mostrados separadamente. A indisponibilidade de interpretação não impede o cálculo. O sistema não gera diagnóstico nem prescrição.
-
-Fonte original: [Frisancho 1981 — resumo do periódico](https://ajcn.nutrition.org/article/S0002-9165%2823%2943220-0/abstract), [registro PubMed](https://pubmed.ncbi.nlm.nih.gov/6975564/). DOI: 10.1093/ajcn/34.11.2540. Não foram extraídas tabelas de terceiros.
-
-## Validação e publicação
-
-```powershell
+# Iniciar API (porta 3000) e dev server Angular (porta 4200) em paralelo
+npm.cmd run dev
+Acesse http://localhost:4200. O dev server Angular encaminha /api ao Express na porta 3000.
+Testes e validação
+# Verificação de tipos e linting
 npm.cmd run typecheck
 npm.cmd run lint
+
+# Testes de integração (requer banco local ativo)
+# Cria schema temporário isolado, aplica migrações, executa e remove
 npm.cmd test
+
+# Testes unitários sem banco
+npm.cmd run test:unit
+
+# Testes E2E com Playwright (cria e remove dados fictícios ao finalizar)
 npx.cmd playwright install chromium
 npm.cmd run test:e2e
+
+# Auditoria de dependências
 npm.cmd audit
+Não execute npm test contra um banco de produção.
+Publicação
+O pacote de publicação é gerado com:
 npm.cmd run package
-```
-
-`npm test` cria um schema temporário isolado no PostgreSQL local, aplica as migrações, executa os testes e remove exclusivamente esse schema. Não execute testes contra um banco de produção. `npm run test:unit` não exige banco. E2E cria contas e pacientes fictícios e remove os dados de teste ao finalizar.
-
-O pacote de publicação é `dist/frisancho-ap-squarecloud.zip`, com JavaScript compilado, Angular compilado, migrações, dependências de produção e lockfile próprio. Não contém `.env`, banco local ou `node_modules`.
-
-- [Publicação na Square Cloud e Cloudflare](docs/DEPLOY.md)
-- [PostgreSQL Square Cloud: certificados, inventário, migrations e transferência](docs/BANCO_SQUARE_CLOUD.md)
-- [Segurança, backup, retenção e restauração](docs/OPERACAO.md)
-- [Resultados e limitações das verificações](docs/VERIFICACAO.md)
-- [Revisão do layout, diagnóstico de CSS e capturas finais](docs/LAYOUT.md)
-- [OpenAPI completo](docs/openapi.json), também em `/api/v1/openapi.json`
-
-Ainda dependem do responsável: domínio definitivo, disponibilidade do subdomínio, plano Square Cloud, PostgreSQL de produção, variáveis de ambiente, topologia de proxy, política de retenção/backup e eventual fonte tabulada autorizada. Nenhuma publicação externa foi realizada.
+# Saída: dist/frisancho-ap-squarecloud.zip
+O ZIP contém JavaScript compilado, Angular compilado, migrações, dependências de produção e lockfile próprio. Não contém .env, banco local ou node_modules.
+Consulte os guias completos:
+Guia
+Conteúdo
+DEPLOY.md
+Publicação na Square Cloud e Cloudflare
+BANCO_SQUARE_CLOUD.md
+PostgreSQL Square Cloud: certificados, inventário e migrações
+OPERACAO.md
+Segurança, backup, retenção e restauração
+VERIFICACAO.md
+Resultados e limitações das verificações
+LAYOUT.md
+Revisão do layout e capturas finais
+Pendências do responsável: domínio definitivo, plano Square Cloud, PostgreSQL de produção, variáveis de ambiente e política de retenção.
+Referências e documentação
+• OpenAPI completo — também disponível em /api/v1/openapi.json
+• Frisancho 1981 — resumo
+• PubMed 6975564 · DOI: 10.1093/ajcn/34.11.2540
+Aviso legal
+Este sistema é uma ferramenta de apoio ao registro e cálculo. Não gera diagnóstico, prescrição nem substituição de avaliação clínica. A interpretação dos resultados é de responsabilidade exclusiva do profissional de saúde habilitado. Nenhuma tabela numérica de terceiros foi reproduzida ou licenciada neste repositório.
