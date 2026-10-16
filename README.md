@@ -6,7 +6,8 @@
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-336791?style=flat-square&logo=postgresql&logoColor=white)](https://postgresql.org)
 [![Prisma](https://img.shields.io/badge/Prisma-6-2D3748?style=flat-square&logo=prisma&logoColor=white)](https://prisma.io)
 
-![FRISANCHO AP — banner](docs/banner.png)
+<img width="2172" height="724" alt="Frisancho AP minimalist healthcare banner" src="https://github.com/user-attachments/assets/f82ae3f9-7e52-45e5-95c8-e26074b4c785" />
+
 
 **Avaliação antropométrica · Cálculo da CMB · Histórico de pacientes**
 
@@ -14,7 +15,8 @@
 
 ---
 
-![Interface — Nova Avaliação](docs/screenshot.png)
+<img width="1865" height="869" alt="image" src="https://github.com/user-attachments/assets/2df0c538-d062-4f1f-93fa-c01fdf3f3a53" />
+
 
 ---
 
