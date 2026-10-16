@@ -179,7 +179,7 @@ Este sistema é uma ferramenta de apoio ao registro e cálculo. **Não gera diag
 - GitHub: https://github.com/TeuzLins
 - LinkedIn: https://www.linkedin.com/in/mateus-de-lima-lins-prestes-304a812b7/
 
-<td align="center"><a href="https://github.com/TeuzLins"><img style="border-radius: 50%;" src="https://github.com/TeuzLins.png" width="100px;" alt=""/><br /><sub><b>Teuz Lins</b></sub></a><br /><sub>Back-end Developer</sub></td>
+## <td align="center"><a href="https://github.com/TeuzLins"><img style="border-radius: 50%;" src="https://github.com/TeuzLins.png" width="100px;" alt=""/><br /><sub><b>Teuz Lins</b></sub></a><br /><sub>Back-end Developer</sub></td>
 
   ## License
 Este projeto está sob a MIT License.  
