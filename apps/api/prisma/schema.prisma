@@ -1,0 +1,105 @@
+generator client {
+  provider = "prisma-client-js"
+}
+datasource db {
+  provider = "postgresql"
+  url = env("DATABASE_URL")
+}
+model User {
+  id String @id @default(uuid())
+  email String @unique
+  name String
+  passwordHash String
+  status String @default("active")
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @default(now()) @updatedAt @db.Timestamptz(3)
+  sessions Session[]
+  patients Patient[]
+  assessments Assessment[]
+  auditEvents AuditEvent[]
+  idempotencyRecords IdempotencyRecord[]
+}
+model Session {
+  id String @id @default(uuid())
+  tokenHash String @unique
+  csrfToken String
+  expiresAt DateTime @db.Timestamptz(3)
+  revokedAt DateTime? @db.Timestamptz(3)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  userId String
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId])
+  @@index([expiresAt])
+}
+model Patient {
+  id String @id @default(uuid())
+  userId String
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  identifier String
+  displayName String
+  birthDate DateTime? @db.Date
+  referenceSex String?
+  archivedAt DateTime? @db.Timestamptz(3)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @default(now()) @updatedAt @db.Timestamptz(3)
+  assessments Assessment[]
+  @@unique([userId, identifier])
+  @@unique([id, userId])
+  @@index([userId, archivedAt])
+}
+model ReferenceDataset {
+  id String @id
+  key String
+  version String
+  metadata Json
+  assessments Assessment[]
+  @@unique([key, version])
+}
+model Assessment {
+  id String @id @default(uuid())
+  userId String
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  patientId String
+  patient Patient @relation(fields: [patientId, userId], references: [id, userId], onDelete: Restrict)
+  patientSnapshot Json
+  evaluationDate DateTime @db.Date
+  ageYears Int
+  inputs Json
+  result Json
+  referenceId String
+  reference ReferenceDataset @relation(fields: [referenceId], references: [id])
+  engineVersion String
+  revision Int @default(1)
+  idempotencyKey String
+  requestHash String
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+  @@index([userId, patientId, evaluationDate])
+  @@index([userId, evaluationDate])
+}
+model AuditEvent {
+  id String @id @default(uuid())
+  userId String
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  entityId String
+  action String
+  snapshot Json?
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  @@index([userId, entityId])
+}
+model IdempotencyRecord {
+  id String @id @default(uuid())
+  userId String
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  operation String
+  key String
+  requestHash String
+  hashVersion String @default("canonical-v1")
+  response Json?
+  entityId String
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  expiresAt DateTime @db.Timestamptz(3)
+  @@unique([userId, operation, key])
+  @@index([expiresAt])
+  @@index([userId, entityId])
+}

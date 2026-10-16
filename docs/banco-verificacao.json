@@ -1,0 +1,173 @@
+{
+  "date": "2026-10-09",
+  "stack": {
+    "prisma": "6.19.0",
+    "angular": "21"
+  },
+  "unitAndIntegrationTests": 64,
+  "e2eTests": 6,
+  "tlsAndProcessChecks": [
+    {
+      "name": "certificate preparation produces usable matching identity",
+      "verified": true,
+      "connectionAccepted": true
+    },
+    {
+      "name": "certificate preparation rejects mismatched private key",
+      "verified": true
+    },
+    {
+      "name": "runtime valid CA and identity",
+      "verified": true,
+      "connectionAccepted": true
+    },
+    {
+      "name": "runtime untrusted CA rejected",
+      "verified": true,
+      "connectionAccepted": false
+    },
+    {
+      "name": "runtime wrong client identity rejected",
+      "verified": true,
+      "connectionAccepted": false
+    },
+    {
+      "name": "runtime hostname mismatch rejected",
+      "verified": true,
+      "connectionAccepted": false
+    },
+    {
+      "name": "runtime invalid identity password rejected",
+      "verified": true,
+      "connectionAccepted": false
+    },
+    {
+      "name": "CLI migrations with valid TLS",
+      "verified": true
+    },
+    {
+      "name": "CLI rejects invalid CA",
+      "verified": true
+    },
+    {
+      "name": "CLI rejects invalid hostname",
+      "verified": true
+    },
+    {
+      "name": "CLI rejects invalid identity",
+      "verified": true
+    },
+    {
+      "name": "API graceful shutdown",
+      "verified": true
+    },
+    {
+      "name": "API session and records survive process restart",
+      "verified": true
+    },
+    {
+      "name": "API readiness bounded to five seconds; liveness preserved; dependent route returns 503",
+      "verified": true
+    },
+    {
+      "name": "runtime database unavailable rejected",
+      "verified": true,
+      "connectionAccepted": false
+    }
+  ],
+  "localBackupRestoreVerified": true,
+  "localMigrationApplied": true,
+  "sourceConnectionPreserved": true,
+  "remoteOperationsExecuted": false,
+  "remotePending": [
+    "inventory",
+    "provider snapshot",
+    "private certificates",
+    "migrations or compatible baseline",
+    "import dry-run and apply",
+    "deployment",
+    "restart and restoration on provider"
+  ],
+  "layoutWidths": [
+    360,
+    768,
+    1024,
+    1440
+  ],
+  "productionPackage": {
+    "installedWithNpmCi": true,
+    "prismaGeneratedByPostinstall": true,
+    "productionRuntimeWithSecureCookiesVerified": true,
+    "tlsAndProcessChecks": [
+      {
+        "name": "certificate preparation produces usable matching identity",
+        "verified": true,
+        "connectionAccepted": true
+      },
+      {
+        "name": "certificate preparation rejects mismatched private key",
+        "verified": true
+      },
+      {
+        "name": "runtime valid CA and identity",
+        "verified": true,
+        "connectionAccepted": true
+      },
+      {
+        "name": "runtime untrusted CA rejected",
+        "verified": true,
+        "connectionAccepted": false
+      },
+      {
+        "name": "runtime wrong client identity rejected",
+        "verified": true,
+        "connectionAccepted": false
+      },
+      {
+        "name": "runtime hostname mismatch rejected",
+        "verified": true,
+        "connectionAccepted": false
+      },
+      {
+        "name": "runtime invalid identity password rejected",
+        "verified": true,
+        "connectionAccepted": false
+      },
+      {
+        "name": "CLI migrations with valid TLS",
+        "verified": true
+      },
+      {
+        "name": "CLI rejects invalid CA",
+        "verified": true
+      },
+      {
+        "name": "CLI rejects invalid hostname",
+        "verified": true
+      },
+      {
+        "name": "CLI rejects invalid identity",
+        "verified": true
+      },
+      {
+        "name": "API graceful shutdown",
+        "verified": true
+      },
+      {
+        "name": "API session and records survive process restart",
+        "verified": true
+      },
+      {
+        "name": "API readiness bounded to five seconds; liveness preserved; dependent route returns 503",
+        "verified": true
+      },
+      {
+        "name": "runtime database unavailable rejected",
+        "verified": true,
+        "connectionAccepted": false
+      }
+    ],
+    "platform": "Windows",
+    "squareCloudLinuxNotVerified": true
+  }
+}

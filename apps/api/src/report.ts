@@ -1,0 +1,46 @@
+import PDFDocument from 'pdfkit';
+import type { Response } from 'express';
+import type { assessmentDTO } from './dto.js';
+import { createRequire } from 'node:module';
+import { formatNumber, type CalculationResult } from '@frisancho/anthropometry';
+
+export function sendReport(res: Response, assessment: ReturnType<typeof assessmentDTO>) {
+  const patient = assessment.patient as { displayName: string; identifier: string };
+  const result = assessment.result as unknown as CalculationResult;
+  const doc = new PDFDocument({ size: 'A4', margin: 48, info: { Title: 'FRISANCHO AP — Avaliação antropométrica', Author: 'FRISANCHO AP' } });
+  const require = createRequire(import.meta.url);
+  doc.registerFont('Regular', require.resolve('@fontsource/inter/files/inter-latin-400-normal.woff'));
+  doc.registerFont('Bold', require.resolve('@fontsource/inter/files/inter-latin-600-normal.woff'));
+  res.type('application/pdf');
+  res.setHeader('Content-Disposition', `inline; filename="avaliacao-${assessment.id}.pdf"`);
+  doc.pipe(res);
+  const heading = (text: string) => { doc.moveDown().fillColor('#123C47').font('Bold').fontSize(13).text(text); doc.moveDown(0.5).font('Regular').fillColor('#172B34').fontSize(11); };
+  doc.fillColor('#123C47').font('Bold').fontSize(24).text('FRISANCHO AP');
+  doc.font('Regular').fontSize(12).text('Avaliação antropométrica');
+  heading('Identificação da avaliação');
+  doc.text(`Paciente: ${patient.displayName}`);
+  doc.text(`Identificador: ${patient.identifier}`);
+  doc.text(`Data: ${assessment.evaluationDate.split('-').reverse().join('/')} | Idade: ${assessment.ageYears} anos`);
+  doc.text(`Revisão: ${assessment.revision} | Registro: ${assessment.id}`);
+  heading('Medidas e resultado');
+  const i = result.input;
+  doc.text(`CB: ${formatNumber(i.armCircumferenceCm)} cm`);
+  doc.text(`DCT: ${formatNumber(i.tricepsSkinfoldMm)} mm = ${formatNumber(result.tricepsSkinfoldCm)} cm`);
+  doc.text(`Sexo na referência: ${i.referenceSex === 'male' ? 'Masculino' : i.referenceSex === 'female' ? 'Feminino' : 'Não informado'}`);
+  if (i.weightKg) doc.text(`Peso medido: ${formatNumber(i.weightKg)} kg`);
+  if (i.heightCm) doc.text(`Altura medida: ${formatNumber(i.heightCm)} cm`);
+  if (result.bmi != null) doc.text(`IMC numérico: ${formatNumber(result.bmi)} kg/m² (sem classificação)`);
+  doc.moveDown(0.5).font('Bold').fontSize(19).text(`CMB: ${result.displayValue} cm`);
+  doc.font('Regular').fontSize(11).text('Fórmula: CMB = CB - pi × (DCT em mm / 10)');
+  doc.text(`Cálculo com precisão completa: ${result.muscleCircumferenceCm} cm`);
+  if (i.reportedMuscleCircumferenceCm != null) doc.text(`${formatNumber(i.reportedMuscleCircumferenceCm)} cm informados / ${result.displayValue} cm calculados. Diferença: ${formatNumber(result.reportedDifferenceCm!)} cm.`);
+  heading('Referência e limitações');
+  doc.text('Classificação indisponível para esta referência.');
+  for (const reason of result.classificationUnavailableReasons) doc.text(`• ${reason.message}`, { paragraphGap: 6 });
+  doc.text(`${result.reference.author}. ${result.reference.title}. ${result.reference.year}.`, { paragraphGap: 6 });
+  doc.text(`DOI: ${result.reference.doi}`);
+  doc.text(`Motor: ${result.engineVersion} | Referência: ${result.reference.id} / ${result.reference.version}`);
+  heading('Observação');
+  doc.text('Documento de apoio à avaliação antropométrica. Não constitui diagnóstico ou prescrição. Valores arredondados apenas para apresentação.');
+  doc.end();
+}

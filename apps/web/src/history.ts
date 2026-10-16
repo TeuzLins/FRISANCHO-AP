@@ -1,0 +1,39 @@
+import { Component, inject, signal, effect, Input, Output, EventEmitter, OnInit, forwardRef } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
+import { formatNumber } from '@frisancho/anthropometry';
+import { Icons, ModalComponent, ErrorComponent, PagerComponent, GateComponent, SessionService, type Patient, type Assessment, type List } from './shared';
+import { EvaluationStore } from './evaluation';
+import { api } from './api';
+@Component({ selector: 'app-history', standalone: true, imports: [FormsModule, Icons, ErrorComponent, PagerComponent, GateComponent, ModalComponent, forwardRef(() => ReportComponent), forwardRef(() => AuditComponent)], templateUrl: './history.html' })
+export class HistoryComponent {
+  session = inject(SessionService); store = inject(EvaluationStore); router = inject(Router); page = signal(1); patientId = signal(''); patientQuery = signal(''); from = signal(''); to = signal(''); order = signal('desc'); loading = signal(false); error = signal(''); list = signal<List<Assessment>>({ items: [], total: 0, page: 1, limit: 10 }); patients = signal<Patient[]>([]); report = signal<Assessment | null>(null); remove = signal<Assessment | null>(null); audit = signal<Assessment | null>(null); deleteError = signal(''); deleting = signal(false); format = formatNumber; private request = 0; private patientRequest = 0;
+  constructor() {
+    effect(() => { const user = this.session.user(); const q = this.patientQuery(); this.session.dataVersion(); if (user) this.loadPatients(q); });
+    effect(() => { const user = this.session.user(); const p = this.page(); const id = this.patientId(); const from = this.from(); const to = this.to(); const order = this.order(); this.session.dataVersion(); if (user) this.load(p, id, from, to, order); });
+  }
+  date(value: string) { return value.split('-').reverse().join('/'); }
+  async loadPatients(q: string) { const n = ++this.patientRequest; try { const list = await api<List<Patient>>(`/patients?limit=100&q=${encodeURIComponent(q)}`); if (n === this.patientRequest) this.patients.set(list.items); } catch (e) { if (n === this.patientRequest) this.error.set((e as Error).message); } }
+  async load(page: number, patientId: string, from: string, to: string, order: string) {
+    const request = ++this.request; this.loading.set(true);
+    const params = new URLSearchParams({ page: String(page), limit: '10', order }); if (patientId) params.set('patientId', patientId); if (from) params.set('from', from); if (to) params.set('to', to);
+    try { const list = await api<List<Assessment>>(`/assessments?${params}`); if (request === this.request) { this.list.set(list); this.error.set(''); } } catch (e) { if (request === this.request) this.error.set((e as Error).message); } finally { if (request === this.request) this.loading.set(false); }
+  }
+  newAssessment() { this.store.reset(); this.router.navigateByUrl('/'); }
+  edit(a: Assessment) { this.store.edit(a); this.router.navigateByUrl('/'); }
+  async deleteAssessment(a: Assessment) { this.deleting.set(true); this.deleteError.set(''); try { await api(`/assessments/${a.id}`, { method: 'DELETE' }); this.remove.set(null); this.page.set(1); this.session.dataVersion.update(n => n + 1); } catch (e) { this.deleteError.set((e as Error).message); } finally { this.deleting.set(false); } }
+  comparison() {
+    if (!this.patientId() || this.list().items.length < 2) return null;
+    const ordered = [...this.list().items].sort((a, b) => a.evaluationDate.localeCompare(b.evaluationDate)); const first = ordered[0]; const last = ordered[ordered.length - 1];
+    return { first, last, cb: last.inputs.armCircumferenceCm - first.inputs.armCircumferenceCm, dct: last.inputs.tricepsSkinfoldMm - first.inputs.tricepsSkinfoldMm, cmb: last.result.muscleCircumferenceCm - first.result.muscleCircumferenceCm };
+  }
+}
+@Component({ selector: 'app-report', standalone: true, imports: [Icons, ModalComponent], template: `
+<app-modal title="Relatório da avaliação" [wide]="true" (closed)="closed.emit()"><div class="report-actions"><button class="button outline" (click)="print()"><lucide-icon name="file-text" [size]="17"/>Imprimir</button><a class="button" [href]="'/api/v1/assessments/' + assessment.id + '/report'" target="_blank" rel="noreferrer"><lucide-icon name="download" [size]="17"/>Abrir PDF</a></div><article class="print-report"><h1>FRISANCHO AP</h1><p>Avaliação antropométrica</p><hr/><h2>{{assessment.patient.displayName}}</h2><p>Identificador: {{assessment.patient.identifier}} · Data: {{date(assessment.evaluationDate)}} · Idade: {{assessment.ageYears}} anos</p><dl class="result-data"><div><dt>CB</dt><dd>{{format(assessment.inputs.armCircumferenceCm)}} cm</dd></div><div><dt>DCT</dt><dd>{{format(assessment.inputs.tricepsSkinfoldMm)}} mm</dd></div><div><dt>CMB calculada</dt><dd><strong>{{assessment.result.displayValue}} cm</strong></dd></div>@if (assessment.inputs.weightKg; as weight) { <div><dt>Peso medido</dt><dd>{{format(weight)}} kg</dd></div> } @if (assessment.inputs.heightCm; as height) { <div><dt>Altura medida</dt><dd>{{format(height)}} cm</dd></div> } @if (assessment.result.bmi != null) { <div><dt>IMC numérico (sem classificação)</dt><dd>{{format(assessment.result.bmi!)}} kg/m²</dd></div> }</dl><p>CMB = CB − π × (DCT ÷ 10) = {{assessment.result.muscleCircumferenceCm}} cm.</p>@if (assessment.inputs.reportedMuscleCircumferenceCm != null) { <p>{{format(assessment.inputs.reportedMuscleCircumferenceCm!)}} cm informados / {{assessment.result.displayValue}} cm calculados. Diferença: {{format(assessment.result.reportedDifferenceCm!)}} cm.</p> }<h3>Classificação indisponível para esta referência</h3><ul>@for (reason of assessment.result.classificationUnavailableReasons; track reason.code) { <li>{{reason.message}}</li> }</ul><h3>Referência e versão</h3><p>{{assessment.result.reference.author}}. {{assessment.result.reference.title}}. {{assessment.result.reference.year}}. DOI: {{assessment.result.reference.doi}}.</p><p>Motor: {{assessment.result.engineVersion}} · Referência: {{assessment.result.reference.version}} · Revisão: {{assessment.revision}}</p><p class="muted">Apoio à avaliação antropométrica, sem diagnóstico ou prescrição automática. Valores arredondados apenas na apresentação.</p></article></app-modal>` })
+export class ReportComponent { @Input({ required: true }) assessment!: Assessment; @Output() closed = new EventEmitter<void>(); format = formatNumber; date(v: string) { return v.split('-').reverse().join('/'); } print() { window.print(); } }
+@Component({ selector: 'app-audit', standalone: true, imports: [Icons, ModalComponent, ErrorComponent], template: `<app-modal title="Registro de alterações" (closed)="closed.emit()"><app-error [message]="error()"/>@if (loading()) { <lucide-icon name="loader-circle" class="spin" [size]="24"/> } @else { <ul class="audit-list">@for (item of items(); track item.id) { <li><strong>{{item.action === 'ASSESSMENT_UPDATED' ? 'Avaliação atualizada' : 'Avaliação criada'}}</strong><p>{{timestamp(item.createdAt)}}</p>@if (item.snapshot; as snapshot) { <p>Revisão anterior: {{snapshot.revision}} · CMB: {{snapshot.result.displayValue}} cm · Data: {{snapshot.evaluationDate}}</p> }</li> }</ul> }</app-modal>` })
+export class AuditComponent implements OnInit {
+  @Input({ required: true }) assessment!: Assessment; @Output() closed = new EventEmitter<void>(); items = signal<{ id: string; action: string; createdAt: string; snapshot: Assessment | null }[]>([]); loading = signal(true); error = signal('');
+  ngOnInit() { api<{ items: { id: string; action: string; createdAt: string; snapshot: Assessment | null }[] }>(`/assessments/${this.assessment.id}/audit`).then(r => this.items.set(r.items)).catch(e => this.error.set((e as Error).message)).finally(() => this.loading.set(false)); }
+  timestamp(v: string) { return new Date(v).toLocaleString('pt-BR'); }
+}

@@ -1,0 +1,20 @@
+import EmbeddedPostgres from 'embedded-postgres';
+import { existsSync } from 'node:fs';
+import path from 'node:path';
+process.loadEnvFile('.env');
+const connection = new URL(process.env.DATABASE_URL);
+if (!['localhost', '127.0.0.1'].includes(connection.hostname)) throw new Error('O banco de desenvolvimento deve estar em localhost.');
+const pg = new EmbeddedPostgres({ databaseDir: path.resolve('.local/postgres'), user: decodeURIComponent(connection.username), password: decodeURIComponent(connection.password), port: Number(connection.port), persistent: true, initdbFlags: ['--encoding=UTF8', '--locale=C'], postgresFlags: ['-h', '127.0.0.1'], onLog: () => {}, onError: () => console.error('PostgreSQL local: verifique o estado do processo e a porta configurada.') });
+if (!existsSync('.local/postgres/PG_VERSION')) await pg.initialise();
+await pg.start();
+const client = pg.getPgClient();
+await client.connect();
+const name = connection.pathname.slice(1);
+if (!/^[a-z][a-z0-9_]*$/.test(name)) throw new Error('Nome de banco inválido.');
+const found = await client.query('SELECT 1 FROM pg_database WHERE datname=$1', [name]);
+if (!found.rowCount) await client.query(`CREATE DATABASE "${name}" WITH ENCODING='UTF8' TEMPLATE=template0 LC_COLLATE='C' LC_CTYPE='C'`);
+await client.end();
+console.log(`PostgreSQL local ativo na porta ${connection.port}.`);
+const keepAlive = setInterval(() => {}, 60000);
+async function stop() { clearInterval(keepAlive); await pg.stop(); process.exit(0); }
+process.on('SIGTERM', stop); process.on('SIGINT', stop);

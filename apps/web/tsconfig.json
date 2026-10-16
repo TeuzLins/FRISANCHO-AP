@@ -1,0 +1,1 @@
+{ "extends": "../../tsconfig.base.json", "compilerOptions": { "module": "preserve", "moduleResolution": "bundler", "experimentalDecorators": true, "useDefineForClassFields": false, "lib": ["ES2022", "DOM"], "outDir": "../../.local/angular-types", "types": [] }, "angularCompilerOptions": { "strictTemplates": true, "strictInjectionParameters": true }, "include": ["src/**/*.ts"] }

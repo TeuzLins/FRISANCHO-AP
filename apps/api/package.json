@@ -1,0 +1,29 @@
+{
+  "name": "@frisancho/api",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch --env-file=../../.env src/server.ts",
+    "build": "tsc"
+  },
+  "dependencies": {
+    "@fontsource/inter": "^5.3.0",
+    "@frisancho/anthropometry": "1.0.0",
+    "argon2": "^0.44.0",
+    "cookie-parser": "^1.4.7",
+    "express": "^5.1.0",
+    "express-rate-limit": "^8.1.0",
+    "helmet": "^8.1.0",
+    "pdfkit": "^0.17.2",
+    "zod": "^4.1.12",
+    "@frisancho/database": "1.0.0"
+  },
+  "devDependencies": {
+    "@types/cookie-parser": "^1.4.9",
+    "@types/express": "^5.0.3",
+    "@types/node": "^24.9.0",
+    "@types/pdfkit": "^0.17.3",
+    "@types/supertest": "^6.0.3",
+    "supertest": "^7.1.4"
+  }
+}

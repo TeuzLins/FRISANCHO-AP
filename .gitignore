@@ -1,0 +1,17 @@
+node_modules/
+**/.angular/
+dist/
+.env
+.env.*
+!.env.example
+coverage/
+playwright-report/
+test-results/
+.local/
+*.log
+*.p12
+*.pfx
+*.pem
+*.key
+*.crt
+*.dump

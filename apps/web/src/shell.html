@@ -1,0 +1,6 @@
+<div class="app-shell"><a class="skip-link" href="#main">Ir para o conteúdo</a>
+@if (menuOpen()) { <button class="nav-backdrop" aria-label="Fechar menu" (click)="closeMenu()"></button> }
+<app-sidebar [open]="menuOpen()" (closed)="closeMenu()"/>
+<div class="workspace" [attr.inert]="menuOpen() ? '' : null"><app-topbar [title]="currentTitle()" [menuOpen]="menuOpen()" (toggleMenu)="menuOpen.set(!menuOpen())"/><main id="main" class="main-content" tabindex="-1">@if (session.notice()) { <div class="notice" role="status"><lucide-icon name="info" [size]="18"/><span>{{session.notice()}}</span><button class="icon-button" aria-label="Fechar aviso" (click)="session.notice.set('')"><lucide-icon name="x" [size]="16"/></button></div> }<router-outlet/></main><footer class="footer"><span>FRISANCHO AP · Avaliação antropométrica</span><span>Sem diagnóstico ou prescrição automática</span></footer></div>
+@if (session.authOpen()) { <app-auth (closed)="session.authOpen.set(false)"/> }
+</div>

@@ -1,0 +1,140 @@
+import { test, expect } from '@playwright/test';
+import { randomUUID } from 'node:crypto';
+import { mkdirSync, writeFileSync } from 'node:fs';
+const password = 'Somente-teste-local-2026';
+test('calcula, preserva formulário em falha de rede e invalida resultado editado', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.getByRole('heading', { name: 'Nova avaliação', exact: true })).toBeVisible();
+  await expect(page.locator('#cb')).toHaveValue('');
+  await expect(page.getByText('Preencha as medidas para calcular a CMB.', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Calcular avaliação', exact: true }).click();
+  await expect(page.locator('#age')).toBeFocused();
+  await expect(page.locator('#cb-error')).toContainText('maior que zero');
+  await page.getByRole('button', { name: 'Carregar exemplo' }).click();
+  await expect(page.locator('#age')).toHaveValue('76');
+  await page.getByRole('button', { name: 'Calcular avaliação', exact: true }).click();
+  await expect(page.locator('.result-value strong')).toHaveText('24,97');
+  await expect(page.getByText('Classificação indisponível para esta referência', { exact: true })).toBeVisible();
+  await expect(page.locator('.reference-status li')).toHaveCount(3);
+  await page.locator('#dct').fill('16,5');
+  await expect(page.getByRole('button', { name: 'Salvar avaliação', exact: false })).toHaveCount(0);
+  await page.route('**/api/v1/calculations/cmb', route => route.abort());
+  await page.getByRole('button', { name: 'Calcular avaliação', exact: true }).click();
+  await expect(page.getByRole('alert')).toContainText('Não foi possível conectar');
+  await expect(page.locator('#dct')).toHaveValue('16,5');
+  await page.unroute('**/api/v1/calculations/cmb');
+  await page.getByRole('button', { name: 'Calcular avaliação', exact: true }).click();
+  await expect(page.locator('.result-value strong')).toHaveText('24,82');
+  await page.getByRole('button', { name: 'Limpar', exact: true }).click();
+  await expect(page.locator('#cb')).toHaveValue('');
+  await expect(page.locator('.result-value')).toHaveCount(0);
+});
+test('cadastro, paciente, salvar, histórico, PDF, editar e excluir', async ({ page, request }) => {
+  const email = `e2e-${randomUUID()}@example.invalid`;
+  let created = false;
+  try {
+    await page.goto('/'); await page.getByRole('button', { name: 'Entrar na conta', exact: false }).click();
+    await page.getByRole('button', { name: 'Criar uma conta', exact: true }).click();
+    await page.getByLabel('Nome', { exact: true }).fill('Usuário fictício E2E');
+    await page.getByLabel('E-mail', { exact: true }).fill(email);
+    await page.getByLabel('Senha', { exact: true }).fill(password);
+    await page.getByRole('button', { name: 'Criar conta', exact: true }).click();
+    await expect(page.locator('.user-name')).toHaveText('Usuário fictício E2E'); created = true;
+    await page.getByRole('link', { name: 'Pacientes', exact: true }).click();
+    await page.getByRole('button', { name: 'Novo paciente' }).click();
+    await page.getByLabel('Nome de exibição').fill('Caso fictício E2E');
+    await page.getByLabel('Identificador', { exact: true }).fill('E2E-001');
+    await page.getByRole('button', { name: 'Salvar paciente' }).click();
+    await expect(page.locator('table')).toContainText('Caso fictício E2E');
+    await page.getByRole('link', { name: 'Avaliação', exact: true }).click();
+    await page.getByRole('button', { name: 'Carregar exemplo' }).click();
+    await page.locator('#patientId').selectOption({ label: 'Caso fictício E2E · E2E-001' });
+    await page.getByRole('button', { name: 'Calcular avaliação', exact: true }).click();
+    await expect(page.locator('.result-value strong')).toHaveText('24,97');
+    const currentSession = await (await page.context().request.get('/api/v1/auth/me')).json();
+    await page.context().request.post('/api/v1/auth/logout', { headers: { Origin: 'http://localhost:3000', 'X-CSRF-Token': currentSession.csrfToken } });
+    await page.getByRole('button', { name: 'Salvar avaliação', exact: true }).click();
+    await expect(page.getByRole('heading', { name: 'Entrar na conta', exact: true })).toBeVisible();
+    await expect(page.locator('#cb')).toHaveValue('30');
+    await expect(page.locator('.result-value strong')).toHaveText('24,97');
+    await page.getByLabel('E-mail', { exact: true }).fill(email);
+    await page.getByLabel('Senha', { exact: true }).fill(password);
+    await page.getByRole('button', { name: 'Entrar', exact: true }).click();
+    await expect(page.getByRole('heading', { name: 'Entrar na conta', exact: true })).toHaveCount(0);
+    await expect(page.locator('#patientId')).not.toHaveValue('');
+    let lostResponse = false;
+    await page.route('**/api/v1/assessments', async route => {
+      if (!lostResponse && route.request().method() === 'POST') { lostResponse = true; await route.fetch(); await route.abort(); }
+      else await route.continue();
+    });
+    await page.getByRole('button', { name: 'Salvar avaliação', exact: true }).click();
+    await expect(page.getByRole('alert')).toContainText('Não foi possível conectar');
+    await expect(page.locator('#patientId')).not.toHaveValue('');
+    await expect(page.locator('.result-value strong')).toHaveText('24,97');
+    await page.getByRole('button', { name: 'Salvar avaliação', exact: true }).click();
+    await page.unroute('**/api/v1/assessments');
+    await expect(page).toHaveURL(/historico/);
+    await expect(page.locator('table')).toContainText('24,97 cm');
+    await page.reload(); await expect(page.locator('table')).toContainText('Caso fictício E2E');
+    await expect(page.locator('tbody tr')).toHaveCount(1);
+    await page.getByRole('link', { name: 'Pacientes', exact: true }).click();
+    await page.getByRole('button', { name: 'Editar Caso fictício E2E', exact: true }).click();
+    await page.getByRole('combobox', { name: 'Situação do cadastro', exact: true }).selectOption({ label: 'Arquivado' });
+    await page.getByRole('button', { name: 'Salvar paciente', exact: true }).click();
+    await expect(page.locator('table')).toHaveCount(0);
+    await page.getByRole('combobox', { name: 'Cadastros', exact: true }).selectOption('archived');
+    await expect(page.locator('table')).toContainText('Arquivado');
+    await page.getByRole('link', { name: 'Histórico', exact: true }).click();
+    await page.getByRole('button', { name: 'Relatório de Caso fictício E2E', exact: true }).click();
+    await expect(page.locator('.print-report')).toContainText('cmb-1.0.0');
+    const pdfUrl = await page.getByRole('link', { name: 'Abrir PDF' }).getAttribute('href');
+    const pdf = await page.context().request.get(pdfUrl!); expect(pdf.headers()['content-type']).toContain('application/pdf'); expect((await pdf.body()).subarray(0, 5).toString()).toBe('%PDF-');
+    mkdirSync('.local', { recursive: true }); writeFileSync('.local/relatorio-servidor.pdf', await pdf.body());
+    await page.pdf({ path: '.local/relatorio-impressao.pdf', format: 'A4', printBackground: true });
+    await page.screenshot({ path: '.local/screenshots/relatorio-html.png', fullPage: true });
+    await page.getByRole('button', { name: 'Fechar', exact: true }).click();
+    await page.getByRole('button', { name: 'Editar avaliação de Caso fictício E2E', exact: true }).click();
+    await expect(page.getByRole('heading', { name: 'Editar avaliação', exact: true })).toBeVisible();
+    await page.locator('#cb').fill('31');
+    await expect(page.getByRole('button', { name: 'Salvar alterações' })).toHaveCount(0);
+    await page.getByRole('button', { name: 'Calcular avaliação', exact: true }).click();
+    await expect(page.locator('.result-value strong')).toHaveText('25,97');
+    await page.getByRole('button', { name: 'Salvar alterações' }).click();
+    await expect(page.locator('table')).toContainText('25,97 cm');
+    await page.getByRole('button', { name: 'Ver revisões de Caso fictício E2E', exact: true }).click();
+    await expect(page.locator('.audit-list')).toContainText('24,97 cm');
+    await page.getByRole('button', { name: 'Fechar', exact: true }).click();
+    await page.getByRole('button', { name: 'Excluir avaliação de Caso fictício E2E', exact: true }).click();
+    await page.getByRole('button', { name: 'Confirmar exclusão', exact: true }).click();
+    await expect(page.getByRole('heading', { name: 'Nenhuma avaliação neste filtro' })).toBeVisible();
+  } finally {
+    if (created) { const auth = await request.post('/api/v1/auth/login', { headers: { Origin: 'http://localhost:3000' }, data: { email, password } }); const s = await auth.json(); if (auth.ok()) await request.delete('/api/v1/account', { headers: { Origin: 'http://localhost:3000', 'X-CSRF-Token': s.csrfToken }, data: { password, confirmation: 'EXCLUIR' } }); }
+  }
+});
+for (const width of [360, 768, 1024, 1440]) {
+  test(`layout e navegação em ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 1000 }); await page.goto('/');
+    await expect(page.getByRole('heading', { name: 'Nova avaliação', exact: true })).toBeVisible();
+    const skip = page.getByRole('link', { name: 'Ir para o conteúdo', exact: true });
+    expect(await skip.evaluate(el => getComputedStyle(el).clipPath)).toBe('inset(50%)');
+    await page.keyboard.press('Tab'); await expect(skip).toBeFocused();
+    expect(await skip.evaluate(el => getComputedStyle(el).clipPath)).toBe('none');
+    await page.keyboard.press('Enter'); await expect(page.locator('#main')).toBeFocused();
+    expect(await page.locator('.sidebar').evaluate(el => getComputedStyle(el).position)).toBe('fixed');
+    expect(await page.locator('.evaluation-grid').evaluate(el => getComputedStyle(el).display)).toBe('grid');
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+    await page.screenshot({ path: `.local/screenshots/avaliacao-${width}.png`, fullPage: true });
+    if (width < 1024) {
+      const menu = page.getByRole('button', { name: 'Abrir menu' });
+      await menu.focus(); await page.keyboard.press('Enter');
+      await expect(menu).toHaveAttribute('aria-expanded', 'true');
+      await expect(page.getByRole('link', { name: 'Avaliação', exact: true })).toBeFocused();
+      await page.keyboard.press('Escape');
+      await expect(menu).toBeFocused();
+      await menu.click();
+    }
+    await page.getByRole('link', { name: 'Referências', exact: true }).click();
+    await expect(page.getByRole('heading', { name: 'Referências', exact: true })).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  });
+}

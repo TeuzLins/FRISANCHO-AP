@@ -1,0 +1,51 @@
+<app-page-header [title]="store.editing() ? 'Editar avaliação' : 'Nova avaliação'" description="Registre as medidas e confira o cálculo da CMB.">
+  <button class="button outline" [disabled]="busy() || saving()" (click)="loadExample()"><lucide-icon name="file-text" [size]="18"/>Carregar exemplo</button>
+</app-page-header>
+@if (store.editing(); as editing) {
+  <div class="notice"><lucide-icon name="pencil" [size]="18"/><span>Editando a revisão {{editing.revision}}. Recalcule antes de salvar.</span><button class="text-button" (click)="clear()">Cancelar edição</button></div>
+}
+<div class="evaluation-grid">
+  <form class="card evaluation-form" [formGroup]="form" (ngSubmit)="calculate()" novalidate>
+    <fieldset [disabled]="saving()">
+      <div class="card-heading"><span class="section-icon"><lucide-icon name="clipboard-list" [size]="20"/></span><div><h2>Dados da avaliação</h2><p>Informações para este registro</p></div></div>
+      <div class="form-grid assessment-fields">
+        <label class="field" for="date">Data da avaliação<input id="date" type="date" formControlName="date" [attr.aria-invalid]="!!fieldErrors().date" aria-describedby="date-error"/><span id="date-error" class="field-error">{{fieldErrors().date}}</span></label>
+        <app-measurement-field name="age" label="Idade na avaliação" unit="anos" inputMode="numeric" placeholder="Ex.: 76" [control]="form.controls.age" [readOnly]="!!selectedBirthDate()" [hint]="selectedBirthDate() ? 'Calculada na data da avaliação.' : 'Informe os anos completos.'" [error]="fieldErrors().age || ''"/>
+        <label class="field" for="sex">Sexo na referência<select id="sex" formControlName="sex"><option value="">Não informado</option><option value="female">Feminino</option><option value="male">Masculino</option></select><span class="field-hint">Categoria utilizada pela tabela da fonte.</span></label>
+        <div class="field patient-field">
+          <label for="patientId">Paciente <span class="optional">opcional no cálculo</span></label>
+          @if (session.user()) {
+            <input aria-label="Buscar paciente para avaliação" placeholder="Buscar nome ou identificador" [value]="patientSearch()" (input)="patientSearch.set($any($event.target).value)"/>
+            <select id="patientId" formControlName="patientId" (change)="choosePatient($event)"><option value="">Selecione para salvar</option>@for (patient of patients(); track patient.id) { <option [value]="patient.id">{{patient.displayName}} · {{patient.identifier}}</option> }</select>
+            <span class="field-hint">Cadastre novos pacientes na página Pacientes.</span>
+          } @else {
+            <span class="guest-field"><lucide-icon name="users" [size]="18"/>Cálculo sem identificação</span><span class="field-hint">Entre na conta para vincular e salvar.</span>
+          }
+        </div>
+      </div>
+      <app-error [message]="patientError()"/>
+      <div class="form-divider"></div>
+      <div class="card-heading"><span class="section-icon"><lucide-icon name="activity" [size]="20"/></span><div><h2>Medidas antropométricas</h2><p>Preencha as medidas nas unidades indicadas</p></div></div>
+      <div class="form-grid primary-measures">
+        @for (field of numericFields; track field.name) {
+          <app-measurement-field [name]="field.name" [label]="field.title" [unit]="field.unit" [placeholder]="field.placeholder" [hint]="field.hint" [control]="form.controls[field.name]" [error]="fieldErrors()[field.name] || ''"/>
+        }
+      </div>
+      <div class="measurement-note"><lucide-icon name="info" [size]="18"/><span>A DCT em milímetros é convertida para centímetros no cálculo.</span></div>
+      <details class="optional-measures" [open]="hasComplementaryError()">
+        <summary>Medidas complementares <span>opcionais</span><lucide-icon name="chevron-down" [size]="18"/></summary>
+        <div class="form-grid complementary-fields">
+          @for (field of optionalFields; track field.name) {
+            <app-measurement-field [name]="field.name" [label]="field.title" [unit]="field.unit" [placeholder]="field.placeholder" [control]="form.controls[field.name]" [error]="fieldErrors()[field.name] || ''"/>
+          }
+        </div>
+        <p class="field-hint">A CMB anterior serve para conferência. Peso e altura devem ser medidos.</p>
+      </details>
+      <app-error [message]="store.error()"/>
+      <div class="form-actions"><button class="button" type="submit" [disabled]="busy() || saving()"><lucide-icon [name]="busy() ? 'loader-circle' : 'calculator'" [class.spin]="busy()" [size]="18"/>{{busy() ? 'Calculando…' : 'Calcular avaliação'}}</button><button class="button ghost" type="button" [disabled]="busy() || saving()" (click)="clear()"><lucide-icon name="rotate-ccw" [size]="18"/>Limpar</button></div>
+      <div class="privacy-note"><lucide-icon name="shield-check" [size]="16"/>O cálculo não salva dados automaticamente.</div>
+    </fieldset>
+  </form>
+  <app-result-panel class="result-column" [result]="result()" [saving]="saving()" [calculating]="busy()" [editing]="!!store.editing()" [authenticated]="!!session.user()" (save)="save()"/>
+</div>
+<div class="bottom-note"><lucide-icon name="info" [size]="18"/><p><strong>Exemplo fictício:</strong> 76 anos, CB de 30 cm e DCT de 16 mm. Use “Carregar exemplo” para preencher; o caso não é salvo automaticamente.</p></div>

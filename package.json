@@ -1,0 +1,62 @@
+{
+  "name": "frisancho-ap",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=24 <25"
+  },
+  "scripts": {
+    "dev": "concurrently -k \"npm run dev -w @frisancho/api\" \"npm run dev -w @frisancho/web\"",
+    "build": "npm run build -w @frisancho/anthropometry && npm run build -w @frisancho/api && npm run build -w @frisancho/web",
+    "typecheck": "tsc -p packages/anthropometry --noEmit && tsc -p apps/api --noEmit && npm run typecheck -w @frisancho/web",
+    "lint": "eslint .",
+    "test": "node scripts/test.mjs",
+    "test:unit": "vitest run tests/anthropometry.test.ts",
+    "test:e2e": "playwright test",
+    "db:generate": "node scripts/db.mjs generate",
+    "local:setup": "node scripts/setup-local.mjs",
+    "local:db": "node scripts/local-db.mjs",
+    "db:migrate": "npm run db:migrate:deploy",
+    "start": "node apps/api/dist/server.js",
+    "package": "npm run build && node scripts/package.mjs",
+    "db:migrate:dev": "node scripts/db.mjs migrate:dev",
+    "db:migrate:deploy": "node scripts/db.mjs migrate:deploy",
+    "db:status": "node scripts/db.mjs status",
+    "db:check": "node scripts/db.mjs check",
+    "db:inventory": "node scripts/db.mjs inventory",
+    "db:import": "node scripts/db.mjs import",
+    "db:cleanup": "node scripts/db.mjs cleanup",
+    "db:backup": "node scripts/db.mjs backup",
+    "db:restore": "node scripts/db.mjs restore",
+    "test:tls": "npm run build -w @frisancho/api && node scripts/test-tls.mjs",
+    "db:baseline": "node scripts/db.mjs baseline",
+    "db:certificates": "node scripts/certificates.mjs"
+  },
+  "dependencies": {
+    "@prisma/client": "6.19.0",
+    "prisma": "6.19.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.0",
+    "@napi-rs/canvas": "^1.0.10",
+    "@playwright/test": "^1.56.0",
+    "archiver": "^7.0.1",
+    "concurrently": "^9.2.1",
+    "embedded-postgres": "^18.4.0-beta.17",
+    "eslint": "^9.39.0",
+    "pdfjs-dist": "^6.4.299",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.46.0",
+    "vitest": "5.0.3"
+  },
+  "overrides": {
+    "effect": "3.20.0",
+    "deepmerge-ts": "8.0.0"
+  }
+}

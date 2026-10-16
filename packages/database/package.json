@@ -1,0 +1,1 @@
+{"name":"@frisancho/database","version":"1.0.0","type":"module","exports":{".":{"types":"./index.d.ts","default":"./index.mjs"},"./transfer":"./transfer.mjs","./inventory":"./inventory.mjs","./backup":"./backup.mjs"}}
